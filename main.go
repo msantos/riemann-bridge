@@ -32,7 +32,7 @@ func args() *argvT {
 		flag.PrintDefaults()
 	}
 
-	srcStr := flag.String("src", "ws://127.0.0.1:8080/websocket/index",
+	srcStr := flag.String("src", "ws://127.0.0.1:5557/index",
 		"Source Riemann server ipaddr:port")
 	dstStr := flag.String("dst", "ws://127.0.0.1:6557/events",
 		"Destination Riemann server ipaddr:port")
