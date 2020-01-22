@@ -28,13 +28,21 @@ riemann-bridge \
 # OPTIONS
 
 --src *string*
-: Source riemann server
+: Source riemann server (default: ws://127.0.0.1:5557/index)
 
 --dst *string*
-: Destination riemann server
+: Destination riemann server (default: ws://127.0.0.1:6557/events)
 
 --verbose *int*
 : Debug messages
+
+# ENVIRONMENT VARIABLES
+
+RIEMANN_BRIDGE_SRC
+: default source riemann server
+
+RIEMANN_BRIDGE_DST
+: default destination riemann server
 
 # BUILD
 

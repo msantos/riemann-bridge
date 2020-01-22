@@ -23,19 +23,32 @@ const (
 	version = "0.1.0"
 )
 
+func getenv(k, def string) string {
+	if v, ok := os.LookupEnv(k); ok {
+		return v
+	}
+	return def
+}
+
 func args() *argvT {
 	flag.Usage = func() {
 		_, _ = fmt.Fprintf(os.Stderr, `%s v%s
-    Usage: %s [<option>] <query>
+Usage: %s [<option>] <query>
 
-    `, path.Base(os.Args[0]), version, os.Args[0])
+`, path.Base(os.Args[0]), version, os.Args[0])
 		flag.PrintDefaults()
 	}
 
-	srcStr := flag.String("src", "ws://127.0.0.1:5557/index",
-		"Source Riemann server ipaddr:port")
-	dstStr := flag.String("dst", "ws://127.0.0.1:6557/events",
-		"Destination Riemann server ipaddr:port")
+	srcStr := flag.String(
+		"src",
+		getenv("RIEMANN_BRIDGE_SRC", "ws://127.0.0.1:5557/index"),
+		"Source Riemann server ipaddr:port",
+	)
+	dstStr := flag.String(
+		"dst",
+		getenv("RIEMANN_BRIDGE_DST", "ws://127.0.0.1:6557/events"),
+		"Destination Riemann server ipaddr:port",
+	)
 
 	verbose := flag.Int("verbose", 0, "Enable debug messages")
 
