@@ -20,7 +20,7 @@ type argvT struct {
 }
 
 const (
-	version = "0.1.0"
+	version = "0.2.0"
 )
 
 func getenv(k, def string) string {
@@ -87,14 +87,18 @@ func main() {
 	stdout := log.New(os.Stdout, "", 0)
 	stderr := log.New(os.Stderr, "", 0)
 
-	stderr.Printf("connecting to %s", argv.dst.String())
+	if argv.verbose > 0 {
+		stderr.Printf("connecting to %s", argv.dst.String())
+	}
 	dst, _, err := websocket.DefaultDialer.Dial(argv.dst.String(), nil)
 	if err != nil {
 		stderr.Fatal("dial:", err)
 	}
 	defer dst.Close()
 
-	stderr.Printf("connecting to %s", argv.src.String())
+	if argv.verbose > 0 {
+		stderr.Printf("connecting to %s", argv.src.String())
+	}
 	src, _, err := websocket.DefaultDialer.Dial(argv.src.String(), nil)
 	if err != nil {
 		stderr.Fatal("dial:", err)
@@ -107,7 +111,7 @@ func main() {
 			stderr.Println("read:", err)
 			os.Exit(111)
 		}
-		if argv.verbose == 1 {
+		if argv.verbose > 1 {
 			stdout.Printf("recv: %s", message)
 		}
 		if err := dst.WriteMessage(websocket.TextMessage, message); err != nil {
