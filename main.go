@@ -41,12 +41,12 @@ Usage: %s [<option>] <query>
 
 	srcStr := flag.String(
 		"src",
-		getenv("RIEMANN_BRIDGE_SRC", "ws://127.0.0.1:5557/index"),
+		getenv("RIEMANN_BRIDGE_SRC", "ws://127.0.0.1:5556/index"),
 		"Source Riemann server ipaddr:port",
 	)
 	dstStr := flag.String(
 		"dst",
-		getenv("RIEMANN_BRIDGE_DST", "ws://127.0.0.1:6557/events"),
+		getenv("RIEMANN_BRIDGE_DST", "ws://127.0.0.1:6556/events"),
 		"Destination Riemann server ipaddr:port",
 	)
 
@@ -88,20 +88,20 @@ func main() {
 	stderr := log.New(os.Stderr, "", 0)
 
 	if argv.verbose > 0 {
-		stderr.Printf("connecting to %s", argv.dst.String())
+		stderr.Printf("dst: connecting to %s", argv.dst.String())
 	}
 	dst, _, err := websocket.DefaultDialer.Dial(argv.dst.String(), nil)
 	if err != nil {
-		stderr.Fatal("dial:", err)
+		stderr.Fatalf("dst: %s: %s", argv.dst.String(), err)
 	}
 	defer dst.Close()
 
 	if argv.verbose > 0 {
-		stderr.Printf("connecting to %s", argv.src.String())
+		stderr.Printf("src: connecting to %s", argv.src.String())
 	}
 	src, _, err := websocket.DefaultDialer.Dial(argv.src.String(), nil)
 	if err != nil {
-		stderr.Fatal("dial:", err)
+		stderr.Fatalf("src: %s: %s", argv.dst.String(), err)
 	}
 	defer src.Close()
 
