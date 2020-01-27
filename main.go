@@ -16,6 +16,7 @@ type argvT struct {
 	query   string
 	src     *url.URL
 	dst     *url.URL
+	number  int
 	verbose int
 }
 
@@ -50,6 +51,9 @@ Usage: %s [<option>] <query>
 		"Destination Riemann server ipaddr:port",
 	)
 
+	number := flag.Int("number", -1,
+		"Forward the first *number* messages and exit")
+
 	verbose := flag.Int("verbose", 0, "Enable debug messages")
 
 	flag.Parse()
@@ -77,6 +81,7 @@ Usage: %s [<option>] <query>
 		query:   query,
 		src:     src,
 		dst:     dst,
+		number:  *number,
 		verbose: *verbose,
 	}
 }
@@ -105,6 +110,7 @@ func main() {
 	}
 	defer src.Close()
 
+	n := argv.number
 	for {
 		_, message, err := src.ReadMessage()
 		if err != nil {
@@ -113,6 +119,12 @@ func main() {
 		}
 		if argv.verbose > 1 {
 			stdout.Printf("recv: %s", message)
+		}
+		if argv.number > -1 {
+			n--
+			if n <= 0 {
+				os.Exit(0)
+			}
 		}
 		if err := dst.WriteMessage(websocket.TextMessage, message); err != nil {
 			stderr.Println("write:", err)
