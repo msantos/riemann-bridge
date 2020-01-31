@@ -21,8 +21,8 @@ Could be used for:
 ~~~
 riemann-bridge \
  --src=ws://127.0.0.1:5556/index \
- --dst=ws://127.0.0.1:6556/events \
- 'service = "test" and not state = "expired"'
+ --query='service = "test" and not state = "expired"' \
+ ws://127.0.0.1:6556/events
 ~~~
 
 # OPTIONS
@@ -30,8 +30,8 @@ riemann-bridge \
 --src *string*
 : Source riemann server (default: ws://127.0.0.1:5557/index)
 
---dst *string*
-: Destination riemann server (default: ws://127.0.0.1:6557/events)
+--query *string*
+: Riemann query (default: not (service ~= "^riemann" or state = "expired"))
 
 --verbose *int*
 : Debug messages

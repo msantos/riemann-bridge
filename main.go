@@ -21,7 +21,7 @@ type argvT struct {
 }
 
 const (
-	version = "0.2.0"
+	version = "0.3.0"
 )
 
 func getenv(k, def string) string {
@@ -32,11 +32,13 @@ func getenv(k, def string) string {
 }
 
 func args() *argvT {
+	dstStr := getenv("RIEMANN_BRIDGE_DST", "ws://127.0.0.1:6556/events")
+
 	flag.Usage = func() {
 		_, _ = fmt.Fprintf(os.Stderr, `%s v%s
-Usage: %s [<option>] <query>
+Usage: %s [<option>] <destination (default %s)>
 
-`, path.Base(os.Args[0]), version, os.Args[0])
+`, path.Base(os.Args[0]), version, os.Args[0], dstStr)
 		flag.PrintDefaults()
 	}
 
@@ -45,10 +47,10 @@ Usage: %s [<option>] <query>
 		getenv("RIEMANN_BRIDGE_SRC", "ws://127.0.0.1:5556/index"),
 		"Source Riemann server ipaddr:port",
 	)
-	dstStr := flag.String(
-		"dst",
-		getenv("RIEMANN_BRIDGE_DST", "ws://127.0.0.1:6556/events"),
-		"Destination Riemann server ipaddr:port",
+	query := flag.String(
+		"query",
+		`not (service ~= "^riemann" or state = "expired")`,
+		"Riemann query",
 	)
 
 	number := flag.Int("number", -1,
@@ -58,9 +60,8 @@ Usage: %s [<option>] <query>
 
 	flag.Parse()
 
-	query := `not ( service ~= "^riemann" and state = "expired" )`
 	if flag.NArg() > 0 {
-		query = flag.Arg(0)
+		dstStr = flag.Arg(0)
 	}
 
 	src, err := url.Parse(*srcStr)
@@ -69,16 +70,16 @@ Usage: %s [<option>] <query>
 		os.Exit(1)
 	}
 
-	src.RawQuery = "subscribe=true&query=" + url.QueryEscape(query)
+	src.RawQuery = "subscribe=true&query=" + url.QueryEscape(*query)
 
-	dst, err := url.Parse(*dstStr)
+	dst, err := url.Parse(dstStr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
 		os.Exit(1)
 	}
 
 	return &argvT{
-		query:   query,
+		query:   *query,
 		src:     src,
 		dst:     dst,
 		number:  *number,
