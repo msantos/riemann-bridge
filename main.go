@@ -18,6 +18,8 @@ type argvT struct {
 	dst     *url.URL
 	number  int
 	verbose int
+	stdout  *log.Logger
+	stderr  *log.Logger
 }
 
 const (
@@ -85,30 +87,25 @@ Usage: %s [<option>] <destination (default %s)>
 		dst:     dst,
 		number:  *number,
 		verbose: *verbose,
+		stdout:  log.New(os.Stdout, "", 0),
+		stderr:  log.New(os.Stderr, "", 0),
 	}
 }
 
 func main() {
 	argv := args()
 
-	stdout := log.New(os.Stdout, "", 0)
-	stderr := log.New(os.Stderr, "", 0)
+	evch := make(chan []byte)
+	errch := make(chan error)
+
+	go out(argv, evch, errch)
 
 	if argv.verbose > 0 {
-		stderr.Printf("dst: connecting to %s", argv.dst.String())
-	}
-	dst, _, err := websocket.DefaultDialer.Dial(argv.dst.String(), nil)
-	if err != nil {
-		stderr.Fatalf("dst: %s: %s", argv.dst.String(), err)
-	}
-	defer dst.Close()
-
-	if argv.verbose > 0 {
-		stderr.Printf("src: connecting to %s", argv.src.String())
+		argv.stderr.Printf("src: connecting to %s", argv.src.String())
 	}
 	src, _, err := websocket.DefaultDialer.Dial(argv.src.String(), nil)
 	if err != nil {
-		stderr.Fatalf("src: %s: %s", argv.dst.String(), err)
+		argv.stderr.Fatalf("src: %s: %s", argv.dst.String(), err)
 	}
 	defer src.Close()
 
@@ -116,21 +113,34 @@ func main() {
 	for {
 		_, message, err := src.ReadMessage()
 		if err != nil {
-			stderr.Println("read:", err)
+			argv.stderr.Println("read:", err)
 			os.Exit(111)
 		}
-		if argv.verbose > 1 {
-			stdout.Printf("recv: %s", message)
-		}
+		evch <- message
 		if argv.number > -1 {
 			n--
 			if n <= 0 {
 				os.Exit(0)
 			}
 		}
-		if err := dst.WriteMessage(websocket.TextMessage, message); err != nil {
-			stderr.Println("write:", err)
-			os.Exit(111)
+	}
+}
+
+func out(argv *argvT, evch <-chan []byte, errch chan<- error) {
+	if argv.verbose > 0 {
+		argv.stderr.Printf("dst: connecting to %s", argv.dst.String())
+	}
+	dst, _, err := websocket.DefaultDialer.Dial(argv.dst.String(), nil)
+	if err != nil {
+		errch <- err
+		return
+	}
+	defer dst.Close()
+	for {
+		ev := <-evch
+		if err := dst.WriteMessage(websocket.TextMessage, ev); err != nil {
+			errch <- err
+			return
 		}
 	}
 }
