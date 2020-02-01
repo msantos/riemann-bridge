@@ -44,6 +44,9 @@ RIEMANN_BRIDGE_SRC
 RIEMANN_BRIDGE_DST
 : default destination riemann server
 
+RIEMANN_BRIDGE_QUERY
+: default riemann query
+
 # BUILD
 
     go get -u github.com/msantos/riemann-bridge

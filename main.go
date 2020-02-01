@@ -49,7 +49,8 @@ Usage: %s [<option>] <destination (default %s)>
 	)
 	query := flag.String(
 		"query",
-		`not (service ~= "^riemann" or state = "expired")`,
+		getenv("RIEMANN_BRIDGE_QUERY",
+			`not (service ~= "^riemann" or state = "expired")`),
 		"Riemann query",
 	)
 
