@@ -1,12 +1,16 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"path"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -23,7 +27,7 @@ type argvT struct {
 }
 
 const (
-	version = "0.3.0"
+	version = "0.4.0"
 )
 
 func getenv(k, def string) string {
@@ -67,13 +71,16 @@ Usage: %s [<option>] <destination (default %s)>
 		dstStr = flag.Arg(0)
 	}
 
-	src, err := url.Parse(*srcStr)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
-		os.Exit(1)
+	var src *url.URL
+	var err error
+	if *srcStr != "-" {
+		src, err = url.Parse(*srcStr)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
+			os.Exit(1)
+		}
+		src.RawQuery = "subscribe=true&query=" + url.QueryEscape(*query)
 	}
-
-	src.RawQuery = "subscribe=true&query=" + url.QueryEscape(*query)
 
 	dst, err := url.Parse(dstStr)
 	if err != nil {
@@ -108,14 +115,18 @@ func main() {
 		return nil
 	})
 
-	go ws(argv, argv.src.String(), esch, func(s *websocket.Conn) error {
-		_, message, err := s.ReadMessage()
-		if err != nil {
-			return err
-		}
-		sch <- message
-		return nil
-	})
+	if argv.src == nil {
+		go stdin(argv, esch, sch)
+	} else {
+		go ws(argv, argv.src.String(), esch, func(s *websocket.Conn) error {
+			_, message, err := s.ReadMessage()
+			if err != nil {
+				return err
+			}
+			sch <- message
+			return nil
+		})
+	}
 
 	n := argv.number
 
@@ -134,6 +145,32 @@ func main() {
 			}
 			dch <- ev
 		}
+	}
+}
+
+func stdin(argv *argvT, errch chan<- error, evch chan<- []byte) {
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		in := scanner.Bytes()
+		if bytes.TrimSpace(in) == nil {
+			continue
+		}
+		m := make(map[string]interface{})
+		if err := json.Unmarshal(in, &m); err != nil {
+			if argv.verbose > 0 {
+				argv.stderr.Println(err)
+			}
+			continue
+		}
+		if m["time"] == nil {
+			m["time"] = time.Now()
+		}
+		out, err := json.Marshal(m)
+		if err != nil {
+			errch <- err
+			return
+		}
+		evch <- out
 	}
 }
 
