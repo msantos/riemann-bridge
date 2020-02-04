@@ -30,6 +30,10 @@ const (
 	version = "0.4.0"
 )
 
+var (
+	eof = fmt.Errorf("EOF")
+)
+
 func getenv(k, def string) string {
 	if v, ok := os.LookupEnv(k); ok {
 		return v
@@ -72,7 +76,9 @@ Usage: %s [<option>] <destination (default %s)>
 	}
 
 	var src *url.URL
+	var dst *url.URL
 	var err error
+
 	if *srcStr != "-" {
 		src, err = url.Parse(*srcStr)
 		if err != nil {
@@ -82,10 +88,12 @@ Usage: %s [<option>] <destination (default %s)>
 		src.RawQuery = "subscribe=true&query=" + url.QueryEscape(*query)
 	}
 
-	dst, err := url.Parse(dstStr)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
-		os.Exit(1)
+	if dstStr != "-" {
+		dst, err = url.Parse(dstStr)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	return &argvT{
@@ -107,13 +115,17 @@ func main() {
 	edch := make(chan error)
 	esch := make(chan error)
 
-	go ws(argv, argv.dst.String(), edch, func(s *websocket.Conn) error {
-		ev := <-dch
-		if err := s.WriteMessage(websocket.TextMessage, ev); err != nil {
-			return err
-		}
-		return nil
-	})
+	if argv.dst == nil {
+		go stdout(argv, edch, dch)
+	} else {
+		go ws(argv, argv.dst.String(), edch, func(s *websocket.Conn) error {
+			ev := <-dch
+			if err := s.WriteMessage(websocket.TextMessage, ev); err != nil {
+				return err
+			}
+			return nil
+		})
+	}
 
 	if argv.src == nil {
 		go stdin(argv, esch, sch)
@@ -130,12 +142,16 @@ func main() {
 
 	n := argv.number
 
+loop:
 	for {
 		select {
 		case err := <-edch:
 			argv.stderr.Fatalf("%s: %s\n", argv.dst.String(), err)
 		case err := <-esch:
-			argv.stderr.Fatalf("%s: %s\n", argv.src.String(), err)
+			if err != eof {
+				argv.stderr.Fatalf("%s: %s\n", argv.src.String(), err)
+			}
+			break loop
 		case ev := <-sch:
 			if argv.number > -1 {
 				n--
@@ -171,6 +187,14 @@ func stdin(argv *argvT, errch chan<- error, evch chan<- []byte) {
 			return
 		}
 		evch <- out
+	}
+	errch <- eof
+}
+
+func stdout(argv *argvT, errch chan<- error, evch <-chan []byte) {
+	for {
+		ev := <-evch
+		fmt.Printf("%s\n", ev)
 	}
 }
 
