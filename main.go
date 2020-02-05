@@ -41,6 +41,20 @@ func getenv(k, def string) string {
 	return def
 }
 
+func urlFromArg(arg, query string) (*url.URL, error) {
+	if arg != "-" {
+		u, err := url.Parse(arg)
+		if err != nil {
+			return nil, err
+		}
+		if query != "" {
+			u.RawQuery = query
+		}
+		return u, nil
+	}
+	return nil, nil
+}
+
 func args() *argvT {
 	dstStr := getenv("RIEMANN_BRIDGE_DST", "ws://127.0.0.1:6556/events")
 
@@ -79,21 +93,17 @@ Usage: %s [<option>] <destination (default %s)>
 	var dst *url.URL
 	var err error
 
-	if *srcStr != "-" {
-		src, err = url.Parse(*srcStr)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
-			os.Exit(1)
-		}
-		src.RawQuery = "subscribe=true&query=" + url.QueryEscape(*query)
+	src, err = urlFromArg(*srcStr,
+		"subscribe=true&query="+url.QueryEscape(*query))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
+		os.Exit(1)
 	}
 
-	if dstStr != "-" {
-		dst, err = url.Parse(dstStr)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
-			os.Exit(1)
-		}
+	dst, err = urlFromArg(dstStr, "")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
+		os.Exit(1)
 	}
 
 	return &argvT{
