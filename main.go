@@ -125,30 +125,34 @@ func main() {
 	edch := make(chan error)
 	esch := make(chan error)
 
-	if argv.dst == nil {
-		go stdout(argv, edch, dch)
-	} else {
-		go ws(argv, argv.dst.String(), edch, func(s *websocket.Conn) error {
-			ev := <-dch
-			if err := s.WriteMessage(websocket.TextMessage, ev); err != nil {
-				return err
-			}
-			return nil
-		})
-	}
+	go func() {
+		if argv.dst == nil {
+			stdout(argv, edch, dch)
+		} else {
+			ws(argv, argv.dst.String(), edch, func(s *websocket.Conn) error {
+				ev := <-dch
+				if err := s.WriteMessage(websocket.TextMessage, ev); err != nil {
+					return err
+				}
+				return nil
+			})
+		}
+	}()
 
-	if argv.src == nil {
-		go stdin(argv, esch, sch)
-	} else {
-		go ws(argv, argv.src.String(), esch, func(s *websocket.Conn) error {
-			_, message, err := s.ReadMessage()
-			if err != nil {
-				return err
-			}
-			sch <- message
-			return nil
-		})
-	}
+	go func() {
+		if argv.src == nil {
+			stdin(argv, esch, sch)
+		} else {
+			ws(argv, argv.src.String(), esch, func(s *websocket.Conn) error {
+				_, message, err := s.ReadMessage()
+				if err != nil {
+					return err
+				}
+				sch <- message
+				return nil
+			})
+		}
+	}()
 
 	n := argv.number
 
