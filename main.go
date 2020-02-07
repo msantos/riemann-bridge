@@ -208,7 +208,10 @@ func stdin(argv *argvT, errch chan<- error, evch chan<- []byte) {
 func stdout(argv *argvT, errch chan<- error, evch <-chan []byte) {
 	for {
 		ev := <-evch
-		fmt.Printf("%s\n", ev)
+		_, err := fmt.Printf("%s\n", ev)
+		if err != nil {
+			errch <- err
+		}
 	}
 }
 
