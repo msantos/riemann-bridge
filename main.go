@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	eof = fmt.Errorf("EOF")
+	errEOF = fmt.Errorf("EOF")
 )
 
 func getenv(k, def string) string {
@@ -162,7 +162,7 @@ loop:
 		case err := <-edch:
 			argv.stderr.Fatalf("%s: %s\n", argv.dst.String(), err)
 		case err := <-esch:
-			if err != eof {
+			if err != errEOF {
 				argv.stderr.Fatalf("%s: %s\n", argv.src.String(), err)
 			}
 			break loop
@@ -202,7 +202,7 @@ func stdin(argv *argvT, errch chan<- error, evch chan<- []byte) {
 		}
 		evch <- out
 	}
-	errch <- eof
+	errch <- errEOF
 }
 
 func stdout(argv *argvT, errch chan<- error, evch <-chan []byte) {
