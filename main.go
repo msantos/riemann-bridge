@@ -17,13 +17,14 @@ import (
 
 // argvT : command line arguments
 type argvT struct {
-	query   string
-	src     *url.URL
-	dst     *url.URL
-	number  int
-	verbose int
-	stdout  *log.Logger
-	stderr  *log.Logger
+	query      string
+	src        *url.URL
+	dst        *url.URL
+	bufferSize int
+	number     int
+	verbose    int
+	stdout     *log.Logger
+	stderr     *log.Logger
 }
 
 const (
@@ -78,6 +79,9 @@ Usage: %s [<option>] <destination (default %s)>
 		"Riemann query",
 	)
 
+	bufferSize := flag.Int("buffer-size", 0,
+		"Buffer size (0 to disable)")
+
 	number := flag.Int("number", -1,
 		"Forward the first *number* messages and exit")
 
@@ -107,13 +111,14 @@ Usage: %s [<option>] <destination (default %s)>
 	}
 
 	return &argvT{
-		query:   *query,
-		src:     src,
-		dst:     dst,
-		number:  *number,
-		verbose: *verbose,
-		stdout:  log.New(os.Stdout, "", 0),
-		stderr:  log.New(os.Stderr, "", 0),
+		query:      *query,
+		src:        src,
+		dst:        dst,
+		bufferSize: *bufferSize,
+		number:     *number,
+		verbose:    *verbose,
+		stdout:     log.New(os.Stdout, "", 0),
+		stderr:     log.New(os.Stderr, "", 0),
 	}
 }
 
@@ -121,6 +126,10 @@ func main() {
 	argv := args()
 
 	dch := make(chan []byte)
+	if argv.bufferSize > 0 {
+		dch = make(chan []byte, argv.bufferSize)
+	}
+
 	sch := make(chan []byte)
 	edch := make(chan error)
 	esch := make(chan error)
@@ -173,7 +182,18 @@ loop:
 					os.Exit(0)
 				}
 			}
-			dch <- ev
+			if argv.bufferSize > 0 {
+				select {
+				case dch <- ev:
+				default:
+					if argv.verbose > 0 {
+						argv.stderr.Printf("dropping event:%s\n", ev)
+					}
+					continue
+				}
+			} else {
+				dch <- ev
+			}
 		}
 	}
 }
