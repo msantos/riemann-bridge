@@ -163,23 +163,29 @@ func main() {
 		}
 	}()
 
+	if err := eventLoop(argv, sch, dch, esch, edch); err != nil {
+		argv.stderr.Fatalf("%s\n", err)
+	}
+}
+
+func eventLoop(argv *argvT, sch <-chan []byte, dch chan<- []byte,
+	esch, edch <-chan error) error {
 	n := argv.number
 
-loop:
 	for {
 		select {
 		case err := <-edch:
-			argv.stderr.Fatalf("%s: %s\n", argv.dst.String(), err)
+			return err
 		case err := <-esch:
-			if err != errEOF {
-				argv.stderr.Fatalf("%s: %s\n", argv.src.String(), err)
+			if err == errEOF {
+				return nil
 			}
-			break loop
+			return err
 		case ev := <-sch:
 			if argv.number > -1 {
 				n--
 				if n < 0 {
-					os.Exit(0)
+					return nil
 				}
 			}
 			if argv.bufferSize > 0 {
