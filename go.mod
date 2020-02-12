@@ -1,4 +1,4 @@
-module riemann-bridge
+module github.com/msantos/riemann-bridge
 
 go 1.13
 
