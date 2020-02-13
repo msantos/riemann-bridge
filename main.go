@@ -136,7 +136,7 @@ func main() {
 
 	go func() {
 		if argv.dst == nil {
-			stdout(argv, edch, dch)
+			stdout(argv, dch, edch)
 		} else {
 			ws(argv, argv.dst.String(), edch, func(s *websocket.Conn) error {
 				ev := <-dch
@@ -150,7 +150,7 @@ func main() {
 
 	go func() {
 		if argv.src == nil {
-			stdin(argv, esch, sch)
+			stdin(argv, sch, esch)
 		} else {
 			ws(argv, argv.src.String(), esch, func(s *websocket.Conn) error {
 				_, message, err := s.ReadMessage()
@@ -204,7 +204,7 @@ func eventLoop(argv *argvT, sch <-chan []byte, dch chan<- []byte,
 	}
 }
 
-func stdin(argv *argvT, errch chan<- error, evch chan<- []byte) {
+func stdin(argv *argvT, evch chan<- []byte, errch chan<- error) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		in := scanner.Bytes()
@@ -231,7 +231,7 @@ func stdin(argv *argvT, errch chan<- error, evch chan<- []byte) {
 	errch <- errEOF
 }
 
-func stdout(argv *argvT, errch chan<- error, evch <-chan []byte) {
+func stdout(argv *argvT, evch <-chan []byte, errch chan<- error) {
 	for {
 		ev := <-evch
 		_, err := fmt.Printf("%s\n", ev)
