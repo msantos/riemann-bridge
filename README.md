@@ -4,7 +4,7 @@ riemann-bridge [*options*] *url*
 
 # DESCRIPTION
 
-A command line, pipeline for [riemann](https://riemann.io/) events:
+Pipeline for [riemann](https://riemann.io/) events:
 
 * read events from a [websocket](https://github.com/gorilla/websocket)
   or stdin
@@ -78,10 +78,3 @@ RIEMANN_BRIDGE_QUERY
 # BUILD
 
     go get -u github.com/msantos/riemann-bridge
-
-# TODO
-
-* optional rate limiting
-
-* flow control: if buffered events exceed a user specified limit, drop
-  new events
