@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
 	"path"
@@ -23,8 +22,6 @@ type argvT struct {
 	bufferSize int
 	number     int
 	verbose    int
-	stdout     *log.Logger
-	stderr     *log.Logger
 }
 
 const (
@@ -117,8 +114,6 @@ Usage: %s [<option>] <destination (default %s)>
 		bufferSize: *bufferSize,
 		number:     *number,
 		verbose:    *verbose,
-		stdout:     log.New(os.Stdout, "", 0),
-		stderr:     log.New(os.Stderr, "", 0),
 	}
 }
 
@@ -164,7 +159,8 @@ func main() {
 	}()
 
 	if err := eventLoop(argv, sch, dch, esch, edch); err != nil {
-		argv.stderr.Fatalf("%s\n", err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(111)
 	}
 }
 
@@ -193,7 +189,7 @@ func eventLoop(argv *argvT, sch <-chan []byte, dch chan<- []byte,
 				case dch <- ev:
 				default:
 					if argv.verbose > 0 {
-						argv.stderr.Printf("dropping event:%s\n", ev)
+						fmt.Fprintf(os.Stderr, "dropping event:%s\n", ev)
 					}
 					continue
 				}
@@ -214,7 +210,7 @@ func stdin(argv *argvT, evch chan<- []byte, errch chan<- error) {
 		m := make(map[string]interface{})
 		if err := json.Unmarshal(in, &m); err != nil {
 			if argv.verbose > 0 {
-				argv.stderr.Println(err)
+				fmt.Fprintln(os.Stderr, err)
 			}
 			continue
 		}
@@ -244,7 +240,7 @@ func stdout(argv *argvT, evch <-chan []byte, errch chan<- error) {
 func ws(argv *argvT, url string, errch chan<- error,
 	ev func(*websocket.Conn) error) {
 	if argv.verbose > 0 {
-		argv.stderr.Printf("ws: connecting to %s", url)
+		fmt.Fprintf(os.Stderr, "ws: connecting to %s", url)
 	}
 	s, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
