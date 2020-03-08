@@ -90,18 +90,14 @@ Usage: %s [<option>] <destination (default %s)>
 		dstStr = flag.Arg(0)
 	}
 
-	var src *url.URL
-	var dst *url.URL
-	var err error
-
-	src, err = urlFromArg(*srcStr,
+	src, err := urlFromArg(*srcStr,
 		"subscribe=true&query="+url.QueryEscape(*query))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
 		os.Exit(1)
 	}
 
-	dst, err = urlFromArg(dstStr, "")
+	dst, err := urlFromArg(dstStr, "")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "invalid url: %v\n", err)
 		os.Exit(1)
@@ -131,9 +127,9 @@ func main() {
 
 	go func() {
 		if argv.dst == nil {
-			stdout(argv, dch, edch)
+			argv.stdout(dch, edch)
 		} else {
-			ws(argv, argv.dst.String(), edch, func(s *websocket.Conn) error {
+			argv.ws(argv.dst.String(), edch, func(s *websocket.Conn) error {
 				ev := <-dch
 				if err := s.WriteMessage(websocket.TextMessage, ev); err != nil {
 					return err
@@ -145,9 +141,9 @@ func main() {
 
 	go func() {
 		if argv.src == nil {
-			stdin(argv, sch, esch)
+			argv.stdin(sch, esch)
 		} else {
-			ws(argv, argv.src.String(), esch, func(s *websocket.Conn) error {
+			argv.ws(argv.src.String(), esch, func(s *websocket.Conn) error {
 				_, message, err := s.ReadMessage()
 				if err != nil {
 					return err
@@ -158,13 +154,13 @@ func main() {
 		}
 	}()
 
-	if err := eventLoop(argv, sch, dch, esch, edch); err != nil {
+	if err := argv.eventLoop(sch, dch, esch, edch); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(111)
 	}
 }
 
-func eventLoop(argv *argvT, sch <-chan []byte, dch chan<- []byte,
+func (argv *argvT) eventLoop(sch <-chan []byte, dch chan<- []byte,
 	esch, edch <-chan error) error {
 	n := argv.number
 
@@ -200,7 +196,7 @@ func eventLoop(argv *argvT, sch <-chan []byte, dch chan<- []byte,
 	}
 }
 
-func stdin(argv *argvT, evch chan<- []byte, errch chan<- error) {
+func (argv *argvT) stdin(evch chan<- []byte, errch chan<- error) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		in := scanner.Bytes()
@@ -227,7 +223,7 @@ func stdin(argv *argvT, evch chan<- []byte, errch chan<- error) {
 	errch <- errEOF
 }
 
-func stdout(argv *argvT, evch <-chan []byte, errch chan<- error) {
+func (argv *argvT) stdout(evch <-chan []byte, errch chan<- error) {
 	for {
 		ev := <-evch
 		_, err := fmt.Printf("%s\n", ev)
@@ -237,7 +233,7 @@ func stdout(argv *argvT, evch <-chan []byte, errch chan<- error) {
 	}
 }
 
-func ws(argv *argvT, url string, errch chan<- error,
+func (argv *argvT) ws(url string, errch chan<- error,
 	ev func(*websocket.Conn) error) {
 	if argv.verbose > 0 {
 		fmt.Fprintf(os.Stderr, "ws: connecting to %s", url)
