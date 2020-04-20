@@ -27,6 +27,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"path"
@@ -47,10 +48,6 @@ type argvT struct {
 
 const (
 	version = "0.4.0"
-)
-
-var (
-	errEOF = fmt.Errorf("EOF")
 )
 
 func getenv(k, def string) string {
@@ -190,7 +187,7 @@ func (argv *argvT) eventLoop(sch <-chan []byte, dch chan<- []byte,
 		case err := <-edch:
 			return err
 		case err := <-esch:
-			if err == errEOF {
+			if err == io.EOF {
 				return nil
 			}
 			return err
@@ -241,7 +238,7 @@ func (argv *argvT) stdin(evch chan<- []byte, errch chan<- error) {
 		}
 		evch <- out
 	}
-	errch <- errEOF
+	errch <- io.EOF
 }
 
 func (argv *argvT) stdout(evch <-chan []byte, errch chan<- error) {
