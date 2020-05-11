@@ -134,21 +134,21 @@ Usage: %s [<option>] <destination (default %s)>
 func main() {
 	argv := args()
 
-	dch := make(chan []byte)
+	wch := make(chan []byte)
 	if argv.bufferSize > 0 {
-		dch = make(chan []byte, argv.bufferSize)
+		wch = make(chan []byte, argv.bufferSize)
 	}
 
-	sch := make(chan []byte)
-	edch := make(chan error)
-	esch := make(chan error)
+	rch := make(chan []byte)
+	werrch := make(chan error)
+	rerrch := make(chan error)
 
 	go func() {
 		if argv.dst == nil {
-			argv.stdout(dch, edch)
+			argv.stdout(wch, werrch)
 		} else {
-			argv.ws(argv.dst.String(), edch, func(s *websocket.Conn) error {
-				ev := <-dch
+			argv.ws(argv.dst.String(), werrch, func(s *websocket.Conn) error {
+				ev := <-wch
 				if err := s.WriteMessage(websocket.TextMessage, ev); err != nil {
 					return err
 				}
@@ -159,39 +159,39 @@ func main() {
 
 	go func() {
 		if argv.src == nil {
-			argv.stdin(sch, esch)
+			argv.stdin(rch, rerrch)
 		} else {
-			argv.ws(argv.src.String(), esch, func(s *websocket.Conn) error {
+			argv.ws(argv.src.String(), rerrch, func(s *websocket.Conn) error {
 				_, message, err := s.ReadMessage()
 				if err != nil {
 					return err
 				}
-				sch <- message
+				rch <- message
 				return nil
 			})
 		}
 	}()
 
-	if err := argv.eventLoop(sch, dch, esch, edch); err != nil {
+	if err := argv.eventLoop(rch, wch, rerrch, werrch); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(111)
 	}
 }
 
-func (argv *argvT) eventLoop(sch <-chan []byte, dch chan<- []byte,
-	esch, edch <-chan error) error {
+func (argv *argvT) eventLoop(rch <-chan []byte, wch chan<- []byte,
+	rerrch, werrch <-chan error) error {
 	n := argv.number
 
 	for {
 		select {
-		case err := <-edch:
+		case err := <-werrch:
 			return err
-		case err := <-esch:
+		case err := <-rerrch:
 			if err == io.EOF {
 				return nil
 			}
 			return err
-		case ev := <-sch:
+		case ev := <-rch:
 			if argv.number > -1 {
 				n--
 				if n < 0 {
@@ -200,7 +200,7 @@ func (argv *argvT) eventLoop(sch <-chan []byte, dch chan<- []byte,
 			}
 			if argv.bufferSize > 0 {
 				select {
-				case dch <- ev:
+				case wch <- ev:
 				default:
 					if argv.verbose > 0 {
 						fmt.Fprintf(os.Stderr, "dropping event:%s\n", ev)
@@ -208,7 +208,7 @@ func (argv *argvT) eventLoop(sch <-chan []byte, dch chan<- []byte,
 					continue
 				}
 			} else {
-				dch <- ev
+				wch <- ev
 			}
 		}
 	}
