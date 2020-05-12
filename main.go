@@ -247,6 +247,7 @@ func (argv *argvT) stdout(evch <-chan []byte, errch chan<- error) {
 		_, err := fmt.Printf("%s\n", ev)
 		if err != nil {
 			errch <- err
+			return
 		}
 	}
 }
