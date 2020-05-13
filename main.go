@@ -140,14 +140,13 @@ func main() {
 	}
 
 	rch := make(chan []byte)
-	werrch := make(chan error)
-	rerrch := make(chan error)
+	errch := make(chan error)
 
 	go func() {
 		if argv.dst == nil {
-			argv.stdout(wch, werrch)
+			argv.stdout(wch, errch)
 		} else {
-			argv.ws(argv.dst.String(), werrch, func(s *websocket.Conn) error {
+			argv.ws(argv.dst.String(), errch, func(s *websocket.Conn) error {
 				ev := <-wch
 				if err := s.WriteMessage(websocket.TextMessage, ev); err != nil {
 					return err
@@ -159,9 +158,9 @@ func main() {
 
 	go func() {
 		if argv.src == nil {
-			argv.stdin(rch, rerrch)
+			argv.stdin(rch, errch)
 		} else {
-			argv.ws(argv.src.String(), rerrch, func(s *websocket.Conn) error {
+			argv.ws(argv.src.String(), errch, func(s *websocket.Conn) error {
 				_, message, err := s.ReadMessage()
 				if err != nil {
 					return err
@@ -172,21 +171,19 @@ func main() {
 		}
 	}()
 
-	if err := argv.eventLoop(rch, wch, rerrch, werrch); err != nil {
+	if err := argv.eventLoop(rch, wch, errch); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(111)
 	}
 }
 
 func (argv *argvT) eventLoop(rch <-chan []byte, wch chan<- []byte,
-	rerrch, werrch <-chan error) error {
+	errch <-chan error) error {
 	n := argv.number
 
 	for {
 		select {
-		case err := <-werrch:
-			return err
-		case err := <-rerrch:
+		case err := <-errch:
 			if err == io.EOF {
 				return nil
 			}
