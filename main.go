@@ -58,17 +58,17 @@ func getenv(k, def string) string {
 }
 
 func urlFromArg(arg, query string) (*url.URL, error) {
-	if arg != "-" {
-		u, err := url.Parse(arg)
-		if err != nil {
-			return nil, err
-		}
-		if query != "" {
-			u.RawQuery = query
-		}
-		return u, nil
+	if arg == "-" {
+		return nil, nil
 	}
-	return nil, nil
+	u, err := url.Parse(arg)
+	if err != nil {
+		return nil, err
+	}
+	if query != "" {
+		u.RawQuery = query
+	}
+	return u, nil
 }
 
 func args() *argvT {
