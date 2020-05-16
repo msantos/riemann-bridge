@@ -65,9 +65,7 @@ func urlFromArg(arg, query string) (*url.URL, error) {
 	if err != nil {
 		return nil, err
 	}
-	if query != "" {
-		u.RawQuery = query
-	}
+	u.RawQuery = query
 	return u, nil
 }
 
