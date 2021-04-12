@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2020 Michael Santos
+// Copyright (c) 2020-2021 Michael Santos
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -146,10 +146,7 @@ func main() {
 		} else {
 			argv.ws(argv.dst.String(), errch, func(s *websocket.Conn) error {
 				ev := <-wch
-				if err := s.WriteMessage(websocket.TextMessage, ev); err != nil {
-					return err
-				}
-				return nil
+				return s.WriteMessage(websocket.TextMessage, ev)
 			})
 		}
 	}()
