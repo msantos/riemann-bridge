@@ -36,8 +36,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// argvT : command line arguments
-type argvT struct {
+type stateT struct {
 	query      string
 	src        *url.URL
 	dst        *url.URL
@@ -69,7 +68,7 @@ func urlFromArg(arg, query string) (*url.URL, error) {
 	return u, nil
 }
 
-func args() *argvT {
+func args() *stateT {
 	dstStr := getenv("RIEMANN_BRIDGE_DST", "ws://127.0.0.1:6556/events")
 
 	flag.Usage = func() {
@@ -119,7 +118,7 @@ Usage: %s [<option>] <destination (default %s)>
 		os.Exit(1)
 	}
 
-	return &argvT{
+	return &stateT{
 		query:      *query,
 		src:        src,
 		dst:        dst,
@@ -130,21 +129,21 @@ Usage: %s [<option>] <destination (default %s)>
 }
 
 func main() {
-	argv := args()
+	state := args()
 
 	wch := make(chan []byte)
-	if argv.bufferSize > 0 {
-		wch = make(chan []byte, argv.bufferSize)
+	if state.bufferSize > 0 {
+		wch = make(chan []byte, state.bufferSize)
 	}
 
 	rch := make(chan []byte)
 	errch := make(chan error)
 
 	go func() {
-		if argv.dst == nil {
-			argv.stdout(wch, errch)
+		if state.dst == nil {
+			state.stdout(wch, errch)
 		} else {
-			argv.ws(argv.dst.String(), errch, func(s *websocket.Conn) error {
+			state.ws(state.dst.String(), errch, func(s *websocket.Conn) error {
 				ev := <-wch
 				return s.WriteMessage(websocket.TextMessage, ev)
 			})
@@ -152,10 +151,10 @@ func main() {
 	}()
 
 	go func() {
-		if argv.src == nil {
-			argv.stdin(rch, errch)
+		if state.src == nil {
+			state.stdin(rch, errch)
 		} else {
-			argv.ws(argv.src.String(), errch, func(s *websocket.Conn) error {
+			state.ws(state.src.String(), errch, func(s *websocket.Conn) error {
 				_, message, err := s.ReadMessage()
 				if err != nil {
 					return err
@@ -166,15 +165,15 @@ func main() {
 		}
 	}()
 
-	if err := argv.eventLoop(rch, wch, errch); err != nil {
+	if err := state.eventLoop(rch, wch, errch); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(111)
 	}
 }
 
-func (argv *argvT) eventLoop(rch <-chan []byte, wch chan<- []byte,
+func (state *stateT) eventLoop(rch <-chan []byte, wch chan<- []byte,
 	errch <-chan error) error {
-	n := argv.number
+	n := state.number
 
 	for {
 		select {
@@ -184,17 +183,17 @@ func (argv *argvT) eventLoop(rch <-chan []byte, wch chan<- []byte,
 			}
 			return err
 		case ev := <-rch:
-			if argv.number > -1 {
+			if state.number > -1 {
 				n--
 				if n < 0 {
 					return nil
 				}
 			}
-			if argv.bufferSize > 0 {
+			if state.bufferSize > 0 {
 				select {
 				case wch <- ev:
 				default:
-					if argv.verbose > 0 {
+					if state.verbose > 0 {
 						fmt.Fprintf(os.Stderr, "dropping event:%s\n", ev)
 					}
 					continue
@@ -206,7 +205,7 @@ func (argv *argvT) eventLoop(rch <-chan []byte, wch chan<- []byte,
 	}
 }
 
-func (argv *argvT) stdin(evch chan<- []byte, errch chan<- error) {
+func (state *stateT) stdin(evch chan<- []byte, errch chan<- error) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		in := scanner.Bytes()
@@ -215,7 +214,7 @@ func (argv *argvT) stdin(evch chan<- []byte, errch chan<- error) {
 		}
 		m := make(map[string]interface{})
 		if err := json.Unmarshal(in, &m); err != nil {
-			if argv.verbose > 0 {
+			if state.verbose > 0 {
 				fmt.Fprintln(os.Stderr, err)
 			}
 			continue
@@ -233,7 +232,7 @@ func (argv *argvT) stdin(evch chan<- []byte, errch chan<- error) {
 	errch <- io.EOF
 }
 
-func (argv *argvT) stdout(evch <-chan []byte, errch chan<- error) {
+func (state *stateT) stdout(evch <-chan []byte, errch chan<- error) {
 	for {
 		ev := <-evch
 		_, err := fmt.Printf("%s\n", ev)
@@ -244,9 +243,9 @@ func (argv *argvT) stdout(evch <-chan []byte, errch chan<- error) {
 	}
 }
 
-func (argv *argvT) ws(url string, errch chan<- error,
+func (state *stateT) ws(url string, errch chan<- error,
 	ev func(*websocket.Conn) error) {
-	if argv.verbose > 0 {
+	if state.verbose > 0 {
 		fmt.Fprintf(os.Stderr, "ws: connecting to %s", url)
 	}
 	s, _, err := websocket.DefaultDialer.Dial(url, nil)
