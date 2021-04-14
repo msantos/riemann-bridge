@@ -196,11 +196,10 @@ func (state *stateT) eventLoop(rch <-chan []byte, wch chan<- []byte,
 					if state.verbose > 0 {
 						fmt.Fprintf(os.Stderr, "dropping event:%s\n", ev)
 					}
-					continue
 				}
-			} else {
-				wch <- ev
+				continue
 			}
+			wch <- ev
 		}
 	}
 }
