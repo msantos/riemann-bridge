@@ -61,6 +61,9 @@ riemann-bridge \
 --number *int*
 : Send *number* events and exit
 
+--buffer-size *uint*
+: Drop any events exceeding the buffer size (defaut: 0 (unbuffered))
+
 --verbose *int*
 : Debug messages
 

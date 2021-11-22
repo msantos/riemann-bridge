@@ -86,7 +86,7 @@ Usage: %s [<option>] <destination (default %s)>
 	)
 
 	bufferSize := flag.Uint("buffer-size", 0,
-		"Buffer size (0 to disable)")
+		"Drop any events exceeding the buffer size (0 (unbuffered))")
 
 	number := flag.Int("number", -1,
 		"Forward the first *number* messages and exit")
