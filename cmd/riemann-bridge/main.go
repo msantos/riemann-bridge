@@ -43,7 +43,7 @@ type stateT struct {
 }
 
 const (
-	version = "0.4.0"
+	version = "0.5.0"
 )
 
 func getenv(k, def string) string {

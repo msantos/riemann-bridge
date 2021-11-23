@@ -65,10 +65,8 @@ func (ws *IO) In() (<-chan []byte, error) {
 			}
 
 			n--
-			if !pipe.Send(ch, event) {
-				if ws.Verbose > 0 {
-					fmt.Fprintf(os.Stderr, "dropping event:%s\n", event)
-				}
+			if !pipe.Send(ch, event) && ws.Verbose > 0 {
+				fmt.Fprintf(os.Stderr, "dropping event:%s\n", event)
 			}
 		}
 	}()

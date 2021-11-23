@@ -72,10 +72,8 @@ func (sio *IO) In() (<-chan []byte, error) {
 				return
 			}
 
-			if !pipe.Send(ch, event) {
-				if sio.Verbose > 0 {
-					fmt.Fprintf(os.Stderr, "dropping event:%s\n", event)
-				}
+			if !pipe.Send(ch, event) && sio.Verbose > 0 {
+				fmt.Fprintf(os.Stderr, "dropping event:%s\n", event)
 			}
 
 			if n == 0 {
