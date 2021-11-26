@@ -124,13 +124,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	in, err := stdin.In()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", state.src, err)
-		os.Exit(1)
-	}
-
-	if err := stdout.Out(in); err != nil {
+	if err := stdout.Out(stdin.In()); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(111)
 	}

@@ -38,7 +38,7 @@ type IO struct {
 	Verbose    int
 }
 
-func (sio *IO) In() (<-chan []byte, error) {
+func (sio *IO) In() *pipe.Pipe {
 	ch := make(chan []byte, sio.BufferSize)
 	n := sio.Number
 
@@ -82,11 +82,15 @@ func (sio *IO) In() (<-chan []byte, error) {
 		}
 	}()
 
-	return ch, nil
+	return &pipe.Pipe{In: ch}
 }
 
-func (sio *IO) Out(ch <-chan []byte) error {
-	for event := range ch {
+func (sio *IO) Out(p *pipe.Pipe) error {
+	if p.Err != nil {
+		return p.Err
+	}
+
+	for event := range p.In {
 		_, err := fmt.Printf("%s\n", event)
 		if err != nil {
 			return err

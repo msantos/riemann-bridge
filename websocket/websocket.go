@@ -36,7 +36,7 @@ type IO struct {
 	Verbose    int
 }
 
-func (ws *IO) In() (<-chan []byte, error) {
+func (ws *IO) In() *pipe.Pipe {
 	if ws.Verbose > 0 {
 		fmt.Fprintf(os.Stderr, "ws: connecting to %s\n", ws.URL)
 	}
@@ -45,7 +45,7 @@ func (ws *IO) In() (<-chan []byte, error) {
 
 	c, _, err := websocket.DefaultDialer.Dial(ws.URL, nil)
 	if err != nil {
-		return ch, err
+		return &pipe.Pipe{Err: err}
 	}
 
 	n := ws.Number
@@ -71,10 +71,14 @@ func (ws *IO) In() (<-chan []byte, error) {
 		}
 	}()
 
-	return ch, nil
+	return &pipe.Pipe{In: ch}
 }
 
-func (ws *IO) Out(ch <-chan []byte) error {
+func (ws *IO) Out(p *pipe.Pipe) error {
+	if p.Err != nil {
+		return p.Err
+	}
+
 	if ws.Verbose > 0 {
 		fmt.Fprintf(os.Stderr, "ws: connecting to %s\n", ws.URL)
 	}
@@ -86,7 +90,7 @@ func (ws *IO) Out(ch <-chan []byte) error {
 
 	defer c.Close()
 
-	for event := range ch {
+	for event := range p.In {
 		if err := c.WriteMessage(websocket.TextMessage, event); err != nil {
 			return err
 		}

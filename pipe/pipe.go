@@ -21,19 +21,24 @@
 // SOFTWARE.
 package pipe
 
-type Piper interface {
-	In() (<-chan []byte, error)
-	Out(ch <-chan []byte) error
+type Pipe struct {
+	In  <-chan []byte
+	Err error
 }
 
-func Send(ch chan<- []byte, p []byte) bool {
+type Piper interface {
+	In() *Pipe
+	Out(*Pipe) error
+}
+
+func Send(ch chan<- []byte, b []byte) bool {
 	if len(ch) == 0 {
-		ch <- p
+		ch <- b
 		return true
 	}
 
 	select {
-	case ch <- p:
+	case ch <- b:
 		return true
 	default:
 		return false
