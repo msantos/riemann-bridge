@@ -139,7 +139,7 @@ func (state *stateT) In() (pipe.Piper, error) {
 		}, nil
 	}
 
-	u, err := queryURL(
+	query, err := queryURL(
 		state.src,
 		"subscribe=true&query="+url.QueryEscape(state.query),
 	)
@@ -148,7 +148,7 @@ func (state *stateT) In() (pipe.Piper, error) {
 	}
 
 	return &websocket.IO{
-		URL:        u,
+		URL:        query,
 		BufferSize: state.bufferSize,
 		Number:     state.number,
 		Verbose:    state.verbose,
@@ -162,13 +162,13 @@ func (state *stateT) Out() (pipe.Piper, error) {
 		}, nil
 	}
 
-	u, err := queryURL(state.dst, "")
+	query, err := queryURL(state.dst, "")
 	if err != nil {
 		return nil, err
 	}
 
 	return &websocket.IO{
-		URL:     u,
+		URL:     query,
 		Verbose: state.verbose,
 	}, nil
 }

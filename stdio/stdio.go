@@ -39,11 +39,12 @@ type IO struct {
 }
 
 func (sio *IO) In() *pipe.Pipe {
-	ch := make(chan []byte, sio.BufferSize)
 	n := sio.Number
 
+	p := pipe.New(sio.BufferSize)
+
 	go func() {
-		defer close(ch)
+		defer p.Close()
 
 		scanner := bufio.NewScanner(os.Stdin)
 
@@ -72,7 +73,7 @@ func (sio *IO) In() *pipe.Pipe {
 				return
 			}
 
-			if !pipe.Send(ch, event) && sio.Verbose > 0 {
+			if !p.Send(event) && sio.Verbose > 0 {
 				fmt.Fprintf(os.Stderr, "dropping event:%s\n", event)
 			}
 
@@ -82,19 +83,18 @@ func (sio *IO) In() *pipe.Pipe {
 		}
 	}()
 
-	return &pipe.Pipe{In: ch}
+	return p
 }
 
 func (sio *IO) Out(p *pipe.Pipe) error {
-	if p.Err != nil {
-		return p.Err
-	}
-
-	for event := range p.In {
-		_, err := fmt.Printf("%s\n", event)
-		if err != nil {
+	for p.Recv() {
+		if _, err := fmt.Printf("%s\n", p.Bytes()); err != nil {
 			return err
 		}
+	}
+
+	if err := p.Err(); err != nil {
+		return err
 	}
 
 	return nil

@@ -41,18 +41,18 @@ func (ws *IO) In() *pipe.Pipe {
 		fmt.Fprintf(os.Stderr, "ws: connecting to %s\n", ws.URL)
 	}
 
-	ch := make(chan []byte, ws.BufferSize)
+	p := pipe.New(ws.BufferSize)
 
 	c, _, err := websocket.DefaultDialer.Dial(ws.URL, nil)
 	if err != nil {
-		return &pipe.Pipe{Err: err}
+		return p.SetErr(err)
 	}
 
 	n := ws.Number
 
 	go func() {
 		defer c.Close()
-		defer close(ch)
+		defer p.Close()
 
 		for {
 			if n == 0 {
@@ -65,20 +65,16 @@ func (ws *IO) In() *pipe.Pipe {
 			}
 
 			n--
-			if !pipe.Send(ch, event) && ws.Verbose > 0 {
+			if !p.Send(event) && ws.Verbose > 0 {
 				fmt.Fprintf(os.Stderr, "dropping event:%s\n", event)
 			}
 		}
 	}()
 
-	return &pipe.Pipe{In: ch}
+	return p
 }
 
 func (ws *IO) Out(p *pipe.Pipe) error {
-	if p.Err != nil {
-		return p.Err
-	}
-
 	if ws.Verbose > 0 {
 		fmt.Fprintf(os.Stderr, "ws: connecting to %s\n", ws.URL)
 	}
@@ -90,10 +86,14 @@ func (ws *IO) Out(p *pipe.Pipe) error {
 
 	defer c.Close()
 
-	for event := range p.In {
-		if err := c.WriteMessage(websocket.TextMessage, event); err != nil {
+	for p.Recv() {
+		if err := c.WriteMessage(websocket.TextMessage, p.Bytes()); err != nil {
 			return err
 		}
+	}
+
+	if err := p.Err(); err != nil {
+		return err
 	}
 
 	return nil

@@ -22,8 +22,9 @@
 package pipe
 
 type Pipe struct {
-	In  <-chan []byte
-	Err error
+	ch  chan []byte
+	err error
+	buf []byte
 }
 
 type Piper interface {
@@ -31,16 +32,49 @@ type Piper interface {
 	Out(*Pipe) error
 }
 
-func Send(ch chan<- []byte, b []byte) bool {
-	if len(ch) == 0 {
-		ch <- b
+func New(bufsize int) *Pipe {
+	ch := make(chan []byte, bufsize)
+	return &Pipe{ch: ch}
+}
+
+func (p *Pipe) Close() {
+	close(p.ch)
+}
+
+func (p *Pipe) SetErr(err error) *Pipe {
+	p.err = err
+	return p
+}
+
+func (p *Pipe) Send(b []byte) bool {
+	if len(p.ch) == 0 {
+		p.ch <- b
 		return true
 	}
 
 	select {
-	case ch <- b:
+	case p.ch <- b:
 		return true
 	default:
 		return false
 	}
+}
+
+func (p *Pipe) Recv() bool {
+	if p.err != nil {
+		return false
+	}
+
+	ok := false
+	p.buf, ok = <-p.ch
+
+	return ok
+}
+
+func (p *Pipe) Bytes() []byte {
+	return p.buf
+}
+
+func (p *Pipe) Err() error {
+	return p.err
 }
