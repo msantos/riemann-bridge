@@ -65,7 +65,7 @@ func (p *Pipe) Recv() bool {
 		return false
 	}
 
-	ok := false
+	var ok bool
 	p.buf, ok = <-p.ch
 
 	return ok

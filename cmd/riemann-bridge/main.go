@@ -22,11 +22,13 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/msantos/riemann-bridge/pipe"
 	"github.com/msantos/riemann-bridge/stdio"
@@ -45,6 +47,8 @@ type stateT struct {
 const (
 	version = "0.5.0"
 )
+
+var errUnsupportedProtocol = errors.New("unsupported protocol")
 
 func getenv(k, def string) string {
 	if v, ok := os.LookupEnv(k); ok {
@@ -114,13 +118,13 @@ func main() {
 
 	stdin, err := state.In()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", state.src, err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 
 	stdout, err := state.Out()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", state.dst, err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 
@@ -131,44 +135,51 @@ func main() {
 }
 
 func (state *stateT) In() (pipe.Piper, error) {
-	if state.src == "-" {
+	switch {
+	case state.src == "-":
 		return &stdio.IO{
 			BufferSize: state.bufferSize,
 			Number:     state.number,
 			Verbose:    state.verbose,
 		}, nil
-	}
+	case strings.HasPrefix(state.src, "ws"):
+		query, err := queryURL(
+			state.src,
+			"subscribe=true&query="+url.QueryEscape(state.query),
+		)
+		if err != nil {
+			return nil, err
+		}
 
-	query, err := queryURL(
-		state.src,
-		"subscribe=true&query="+url.QueryEscape(state.query),
-	)
-	if err != nil {
-		return nil, err
+		return &websocket.IO{
+			URL:        query,
+			BufferSize: state.bufferSize,
+			Number:     state.number,
+			Verbose:    state.verbose,
+		}, nil
+	default:
+		return nil, fmt.Errorf("in: %s: %w", state.src, errUnsupportedProtocol)
 	}
-
-	return &websocket.IO{
-		URL:        query,
-		BufferSize: state.bufferSize,
-		Number:     state.number,
-		Verbose:    state.verbose,
-	}, nil
 }
 
 func (state *stateT) Out() (pipe.Piper, error) {
-	if state.dst == "-" {
+	switch {
+	case state.dst == "-":
 		return &stdio.IO{
 			Verbose: state.verbose,
 		}, nil
-	}
 
-	query, err := queryURL(state.dst, "")
-	if err != nil {
-		return nil, err
-	}
+	case strings.HasPrefix(state.dst, "ws"):
+		query, err := queryURL(state.dst, "")
+		if err != nil {
+			return nil, err
+		}
 
-	return &websocket.IO{
-		URL:     query,
-		Verbose: state.verbose,
-	}, nil
+		return &websocket.IO{
+			URL:     query,
+			Verbose: state.verbose,
+		}, nil
+	default:
+		return nil, fmt.Errorf("%s: %w", state.dst, errUnsupportedProtocol)
+	}
 }
