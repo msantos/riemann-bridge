@@ -6,8 +6,8 @@ riemann-bridge [*options*] *url*
 
 Pipeline for [riemann](https://riemann.io/) events:
 
-* read events from a [websocket](https://github.com/gorilla/websocket)
-  or stdin
+* read events from a [websocket](https://github.com/gorilla/websocket),
+  [SSE](https://github.com/donovanhide/eventsource) or stdin
 * write events to a websocket or stdout
 * forward events between riemann instances
 
@@ -38,7 +38,11 @@ echo '{"service": "foo", "metric": 2}' | \
 ## Querying Events
 
 ~~~
+# websocket
 riemann-bridge --src=ws://127.0.0.1:5556/index --query='service = "foo"' -
+
+# SSE
+riemann-bridge --src=http://127.0.0.1:8080/index --query='service = "foo"' -
 ~~~
 
 ## Forwarding Events Between Riemann Instances

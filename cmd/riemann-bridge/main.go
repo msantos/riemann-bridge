@@ -31,6 +31,7 @@ import (
 	"strings"
 
 	"github.com/msantos/riemann-bridge/pipe"
+	"github.com/msantos/riemann-bridge/sse"
 	"github.com/msantos/riemann-bridge/stdio"
 	"github.com/msantos/riemann-bridge/websocket"
 )
@@ -152,6 +153,21 @@ func (state *stateT) In() (pipe.Piper, error) {
 		}
 
 		return &websocket.IO{
+			URL:        query,
+			BufferSize: state.bufferSize,
+			Number:     state.number,
+			Verbose:    state.verbose,
+		}, nil
+	case strings.HasPrefix(state.src, "http"):
+		query, err := queryURL(
+			state.src,
+			"query="+url.QueryEscape(state.query),
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		return &sse.IO{
 			URL:        query,
 			BufferSize: state.bufferSize,
 			Number:     state.number,
