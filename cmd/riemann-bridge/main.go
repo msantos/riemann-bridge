@@ -46,7 +46,7 @@ type stateT struct {
 }
 
 const (
-	version = "0.5.0"
+	version = "0.6.0"
 )
 
 var errUnsupportedProtocol = errors.New("unsupported protocol")
@@ -68,7 +68,7 @@ func queryURL(arg, query string) (string, error) {
 }
 
 func args() *stateT {
-	dst := getenv("RIEMANN_BRIDGE_DST", "ws://127.0.0.1:6556/events")
+	dst := getenv("RIEMANN_BRIDGE_DST", "-")
 
 	flag.Usage = func() {
 		_, _ = fmt.Fprintf(os.Stderr, `%s v%s
