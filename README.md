@@ -11,11 +11,11 @@ Pipeline for [riemann](https://riemann.io/) events:
 * write events to a websocket or stdout
 * forward events between riemann instances
 
-Some possible uses are:
+Possible uses are:
 
-* sending or querying riemann events
+* publishing or querying riemann events
 
-* stream live events to a test server
+* replicate events to a test server
 
 * partition events to another riemann server for a restricted view
 
@@ -25,6 +25,35 @@ Some possible uses are:
 
 Reads JSON from standard input. If a `time` field does not exist, the
 field is added with the value set to the current time.
+
+## Websocket
+
+### Reading Events
+
+Use `/index`. For example, if the riemann server is running on port 5556
+on localhost:
+
+    ws://127.0.0.1:5556/index
+
+### Writing Events
+
+Use `/events`. For example, if the riemann server is running on port 5556
+on localhost:
+
+    ws://127.0.0.1:5556/events
+
+## SSE
+
+Use `/index`. For example, if the riemann server is running on port 5558
+on localhost:
+
+    http://127.0.0.1:5558/index
+
+If the riemann service is proxied by path, adjust the URL:
+
+    https://example.com/event/index
+
+### Reading Events
 
 # EXAMPLES
 
@@ -54,10 +83,24 @@ riemann-bridge \
  ws://127.0.0.1:6556/events
 ~~~
 
+# ARGS
+
+destination
+: Destination riemann server (default: -)
+
+  Examples:
+
+      ws://127.0.0.1:5556/events
+
 # OPTIONS
 
 --src *string*
-: Source riemann server (default: ws://127.0.0.1:5557/index)
+: Source riemann server (default: -)
+
+  Examples:
+
+      ws://127.0.0.1:5556/index
+      http://127.0.0.1:5558/index
 
 --query *string*
 : Riemann query (default: not (service ~= "^riemann" or state = "expired"))
@@ -84,4 +127,5 @@ RIEMANN_BRIDGE_QUERY
 
 # BUILD
 
-    go get -u github.com/msantos/riemann-bridge
+    cd cmd/riemann-bridge
+    CGO_ENABLED=0 go build -trimpath -ldflags "-s -w"

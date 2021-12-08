@@ -46,7 +46,7 @@ type stateT struct {
 }
 
 const (
-	version = "0.6.0"
+	version = "0.7.0"
 )
 
 var errUnsupportedProtocol = errors.New("unsupported protocol")
@@ -80,8 +80,8 @@ Usage: %s [<option>] <destination (default %s)>
 
 	src := flag.String(
 		"src",
-		getenv("RIEMANN_BRIDGE_SRC", "ws://127.0.0.1:5556/index"),
-		"Source Riemann server ipaddr:port",
+		getenv("RIEMANN_BRIDGE_SRC", "-"),
+		"Source Riemann server ((ws|http)[s]://<ipaddr>:<port>/index)",
 	)
 	query := flag.String(
 		"query",
