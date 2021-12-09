@@ -61,17 +61,17 @@ If the riemann service is proxied by path, adjust the URL:
 
 ~~~
 echo '{"service": "foo", "metric": 2}' | \
- riemann-bridge --src=- ws://127.0.0.1:5556/events
+ riemann-bridge --src=- --dst=ws://127.0.0.1:5556/events
 ~~~
 
 ## Querying Events
 
 ~~~
 # websocket
-riemann-bridge --src=ws://127.0.0.1:5556/index --query='service = "foo"' -
+riemann-bridge --src=ws://127.0.0.1:5556/index 'service = "foo"'
 
 # SSE
-riemann-bridge --src=http://127.0.0.1:8080/index --query='service = "foo"' -
+riemann-bridge --src=http://127.0.0.1:8080/index 'service = "foo"'
 ~~~
 
 ## Forwarding Events Between Riemann Instances
@@ -79,18 +79,14 @@ riemann-bridge --src=http://127.0.0.1:8080/index --query='service = "foo"' -
 ~~~
 riemann-bridge \
  --src=ws://127.0.0.1:5556/index \
- --query='service = "test" and not state = "expired"' \
- ws://127.0.0.1:6556/events
+ --dst=ws://127.0.0.1:6556/events \
+ 'service = "test" and not state = "expired"'
 ~~~
 
 # ARGS
 
-destination
-: Destination riemann server (default: -)
-
-  Examples:
-
-      ws://127.0.0.1:5556/events
+query *string*
+: Riemann query (default: not (service ~= "^riemann" or state = "expired"))
 
 # OPTIONS
 
@@ -102,8 +98,12 @@ destination
       ws://127.0.0.1:5556/index
       http://127.0.0.1:5558/index
 
---query *string*
-: Riemann query (default: not (service ~= "^riemann" or state = "expired"))
+destination
+: Destination riemann server (default: -)
+
+  Examples:
+
+      ws://127.0.0.1:5556/events
 
 --number *int*
 : Send *number* events and exit

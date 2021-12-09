@@ -46,7 +46,7 @@ type stateT struct {
 }
 
 const (
-	version = "0.7.0"
+	version = "1.0.0"
 )
 
 var errUnsupportedProtocol = errors.New("unsupported protocol")
@@ -68,13 +68,14 @@ func queryURL(arg, query string) (string, error) {
 }
 
 func args() *stateT {
-	dst := getenv("RIEMANN_BRIDGE_DST", "-")
+	query := getenv("RIEMANN_BRIDGE_QUERY",
+		`not (service ~= "^riemann" or state = "expired")`)
 
 	flag.Usage = func() {
 		_, _ = fmt.Fprintf(os.Stderr, `%s v%s
-Usage: %s [<option>] <destination (default %s)>
+Usage: %s [<option>] <query (default '%s')>
 
-`, path.Base(os.Args[0]), version, os.Args[0], dst)
+`, path.Base(os.Args[0]), version, os.Args[0], query)
 		flag.PrintDefaults()
 	}
 
@@ -83,11 +84,10 @@ Usage: %s [<option>] <destination (default %s)>
 		getenv("RIEMANN_BRIDGE_SRC", "-"),
 		"Source Riemann server ((ws|http)[s]://<ipaddr>:<port>/index)",
 	)
-	query := flag.String(
-		"query",
-		getenv("RIEMANN_BRIDGE_QUERY",
-			`not (service ~= "^riemann" or state = "expired")`),
-		"Riemann query",
+	dst := flag.String(
+		"dst",
+		getenv("RIEMANN_BRIDGE_DST", "-"),
+		"Destination Riemann server (ws[s]://<ipaddr>:<port>/events)",
 	)
 
 	bufferSize := flag.Uint("buffer-size", 0,
@@ -101,13 +101,13 @@ Usage: %s [<option>] <destination (default %s)>
 	flag.Parse()
 
 	if flag.NArg() > 0 {
-		dst = flag.Arg(0)
+		query = flag.Arg(0)
 	}
 
 	return &stateT{
-		query:      *query,
+		query:      query,
 		src:        *src,
-		dst:        dst,
+		dst:        *dst,
 		bufferSize: int(*bufferSize),
 		number:     *number,
 		verbose:    *verbose,
