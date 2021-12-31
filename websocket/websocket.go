@@ -32,7 +32,7 @@ import (
 type IO struct {
 	BufferSize int
 	URL        string
-	Number     int
+	Number     uint64
 	Verbose    int
 }
 
@@ -41,32 +41,31 @@ func (ws *IO) In() *pipe.Pipe {
 		fmt.Fprintf(os.Stderr, "ws: connecting to %s\n", ws.URL)
 	}
 
-	p := pipe.New(ws.BufferSize)
+	p := pipe.New(ws.BufferSize, ws.Number)
 
 	c, _, err := websocket.DefaultDialer.Dial(ws.URL, nil)
 	if err != nil {
 		return p.SetErr(err)
 	}
 
-	n := ws.Number
-
 	go func() {
 		defer c.Close()
 		defer p.Close()
 
 		for {
-			if n == 0 {
-				return
-			}
-
 			_, event, err := c.ReadMessage()
 			if err != nil {
 				return
 			}
 
-			n--
-			if !p.Send(event) && ws.Verbose > 0 {
+			ok, err := p.Send(event)
+
+			if !ok && ws.Verbose > 0 {
 				fmt.Fprintf(os.Stderr, "dropping event:%s\n", event)
+			}
+
+			if err != nil {
+				return
 			}
 		}
 	}()

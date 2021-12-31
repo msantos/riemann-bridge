@@ -41,12 +41,12 @@ type stateT struct {
 	src        string
 	dst        string
 	bufferSize int
-	number     int
+	number     uint64
 	verbose    int
 }
 
 const (
-	version = "1.0.0"
+	version = "1.0.1"
 )
 
 var errUnsupportedProtocol = errors.New("unsupported protocol")
@@ -93,7 +93,7 @@ Usage: %s [<option>] <query (default '%s')>
 	bufferSize := flag.Uint("buffer-size", 0,
 		"Drop any events exceeding the buffer size (0 (unbuffered))")
 
-	number := flag.Int("number", -1,
+	number := flag.Uint("number", 0,
 		"Forward the first *number* messages and exit")
 
 	verbose := flag.Int("verbose", 0, "Enable debug messages")
@@ -109,7 +109,7 @@ Usage: %s [<option>] <query (default '%s')>
 		src:        *src,
 		dst:        *dst,
 		bufferSize: int(*bufferSize),
-		number:     *number,
+		number:     uint64(*number),
 		verbose:    *verbose,
 	}
 }

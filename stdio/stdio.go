@@ -34,14 +34,12 @@ import (
 
 type IO struct {
 	BufferSize int
-	Number     int
+	Number     uint64
 	Verbose    int
 }
 
 func (sio *IO) In() *pipe.Pipe {
-	n := sio.Number
-
-	p := pipe.New(sio.BufferSize)
+	p := pipe.New(sio.BufferSize, sio.Number)
 
 	go func() {
 		defer p.Close()
@@ -49,8 +47,6 @@ func (sio *IO) In() *pipe.Pipe {
 		scanner := bufio.NewScanner(os.Stdin)
 
 		for scanner.Scan() {
-			n--
-
 			in := scanner.Bytes()
 			if bytes.TrimSpace(in) == nil {
 				continue
@@ -73,11 +69,13 @@ func (sio *IO) In() *pipe.Pipe {
 				return
 			}
 
-			if !p.Send(event) && sio.Verbose > 0 {
+			ok, err := p.Send(event)
+
+			if !ok && sio.Verbose > 0 {
 				fmt.Fprintf(os.Stderr, "dropping event:%s\n", event)
 			}
 
-			if n == 0 {
+			if err != nil {
 				return
 			}
 		}

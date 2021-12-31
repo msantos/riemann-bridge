@@ -32,7 +32,7 @@ import (
 type IO struct {
 	BufferSize int
 	URL        string
-	Number     int
+	Number     uint64
 	Verbose    int
 }
 
@@ -41,28 +41,27 @@ func (sse *IO) In() *pipe.Pipe {
 		fmt.Fprintf(os.Stderr, "sse: connecting to %s\n", sse.URL)
 	}
 
-	p := pipe.New(sse.BufferSize)
+	p := pipe.New(sse.BufferSize, sse.Number)
 
 	c, err := eventsource.Subscribe(sse.URL, "")
 	if err != nil {
 		return p.SetErr(err)
 	}
 
-	n := sse.Number
-
 	go func() {
 		defer c.Close()
 		defer p.Close()
 
 		for {
-			if n == 0 {
-				return
+			event := <-c.Events
+			ok, err := p.Send([]byte(event.Data()))
+
+			if !ok && sse.Verbose > 0 {
+				fmt.Fprintf(os.Stderr, "dropping event:%s\n", event)
 			}
 
-			event := <-c.Events
-			n--
-			if !p.Send([]byte(event.Data())) && sse.Verbose > 0 {
-				fmt.Fprintf(os.Stderr, "dropping event:%s\n", event)
+			if err != nil {
+				return
 			}
 		}
 	}()

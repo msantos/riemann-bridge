@@ -21,10 +21,16 @@
 // SOFTWARE.
 package pipe
 
+import (
+	"errors"
+)
+
 type Pipe struct {
-	ch  chan []byte
-	err error
-	buf []byte
+	ch      chan []byte
+	err     error
+	buf     []byte
+	n       uint64
+	limited bool
 }
 
 type Piper interface {
@@ -32,9 +38,11 @@ type Piper interface {
 	Out(*Pipe) error
 }
 
-func New(bufsize int) *Pipe {
+var EOF = errors.New("EOF")
+
+func New(bufsize int, n uint64) *Pipe {
 	ch := make(chan []byte, bufsize)
-	return &Pipe{ch: ch}
+	return &Pipe{ch: ch, n: n, limited: n != 0}
 }
 
 func (p *Pipe) Close() {
@@ -46,18 +54,35 @@ func (p *Pipe) SetErr(err error) *Pipe {
 	return p
 }
 
-func (p *Pipe) Send(b []byte) bool {
+func (p *Pipe) Send(b []byte) (ok bool, err error) {
+	defer func() {
+		if p.exceeded() {
+			err = EOF
+		}
+	}()
+
 	if len(p.ch) == 0 {
 		p.ch <- b
-		return true
+		return true, nil
 	}
 
 	select {
 	case p.ch <- b:
-		return true
+		return true, nil
 	default:
+		return false, nil
+	}
+}
+
+func (p *Pipe) exceeded() bool {
+	if !p.limited {
 		return false
 	}
+	p.n--
+	if p.n == 0 {
+		return true
+	}
+	return false
 }
 
 func (p *Pipe) Recv() bool {
