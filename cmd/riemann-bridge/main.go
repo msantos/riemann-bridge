@@ -46,7 +46,7 @@ type stateT struct {
 }
 
 const (
-	version = "1.0.1"
+	version = "1.0.2"
 )
 
 var errUnsupportedProtocol = errors.New("unsupported protocol")
@@ -129,7 +129,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := stdout.Out(stdin.In()); err != nil {
+	p := pipe.New(state.bufferSize, state.number)
+
+	if err := stdout.Out(stdin.In(p)); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(111)
 	}
@@ -139,9 +141,7 @@ func (state *stateT) In() (pipe.Piper, error) {
 	switch {
 	case state.src == "-":
 		return &stdio.IO{
-			BufferSize: state.bufferSize,
-			Number:     state.number,
-			Verbose:    state.verbose,
+			Verbose: state.verbose,
 		}, nil
 	case strings.HasPrefix(state.src, "ws"):
 		query, err := queryURL(
@@ -153,10 +153,8 @@ func (state *stateT) In() (pipe.Piper, error) {
 		}
 
 		return &websocket.IO{
-			URL:        query,
-			BufferSize: state.bufferSize,
-			Number:     state.number,
-			Verbose:    state.verbose,
+			URL:     query,
+			Verbose: state.verbose,
 		}, nil
 	case strings.HasPrefix(state.src, "http"):
 		query, err := queryURL(
@@ -168,10 +166,8 @@ func (state *stateT) In() (pipe.Piper, error) {
 		}
 
 		return &sse.IO{
-			URL:        query,
-			BufferSize: state.bufferSize,
-			Number:     state.number,
-			Verbose:    state.verbose,
+			URL:     query,
+			Verbose: state.verbose,
 		}, nil
 	default:
 		return nil, fmt.Errorf("in: %s: %w", state.src, errUnsupportedProtocol)

@@ -33,14 +33,10 @@ import (
 )
 
 type IO struct {
-	BufferSize int
-	Number     uint64
-	Verbose    int
+	Verbose int
 }
 
-func (sio *IO) In() *pipe.Pipe {
-	p := pipe.New(sio.BufferSize, sio.Number)
-
+func (sio *IO) In(p *pipe.Pipe) *pipe.Pipe {
 	go func() {
 		defer p.Close()
 

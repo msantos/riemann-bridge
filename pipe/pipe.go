@@ -34,7 +34,7 @@ type Pipe struct {
 }
 
 type Piper interface {
-	In() *Pipe
+	In(*Pipe) *Pipe
 	Out(*Pipe) error
 }
 

@@ -30,18 +30,14 @@ import (
 )
 
 type IO struct {
-	BufferSize int
-	URL        string
-	Number     uint64
-	Verbose    int
+	URL     string
+	Verbose int
 }
 
-func (ws *IO) In() *pipe.Pipe {
+func (ws *IO) In(p *pipe.Pipe) *pipe.Pipe {
 	if ws.Verbose > 0 {
 		fmt.Fprintf(os.Stderr, "ws: connecting to %s\n", ws.URL)
 	}
-
-	p := pipe.New(ws.BufferSize, ws.Number)
 
 	c, _, err := websocket.DefaultDialer.Dial(ws.URL, nil)
 	if err != nil {

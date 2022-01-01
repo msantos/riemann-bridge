@@ -30,18 +30,14 @@ import (
 )
 
 type IO struct {
-	BufferSize int
-	URL        string
-	Number     uint64
-	Verbose    int
+	URL     string
+	Verbose int
 }
 
-func (sse *IO) In() *pipe.Pipe {
+func (sse *IO) In(p *pipe.Pipe) *pipe.Pipe {
 	if sse.Verbose > 0 {
 		fmt.Fprintf(os.Stderr, "sse: connecting to %s\n", sse.URL)
 	}
-
-	p := pipe.New(sse.BufferSize, sse.Number)
 
 	c, err := eventsource.Subscribe(sse.URL, "")
 	if err != nil {
