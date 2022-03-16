@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2020-2021 Michael Santos
+// Copyright (c) 2020-2022 Michael Santos
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@ type stateT struct {
 }
 
 const (
-	version = "1.0.2"
+	version = "1.0.3"
 )
 
 var errUnsupportedProtocol = errors.New("unsupported protocol")

@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2021 Michael Santos
+// Copyright (c) 2021-2022 Michael Santos
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,8 +48,18 @@ func (sse *IO) In(p *pipe.Pipe) *pipe.Pipe {
 		defer c.Close()
 		defer p.Close()
 
+		var event eventsource.Event
+
 		for {
-			event := <-c.Events
+			select {
+			case event = <-c.Events:
+			case errmsg := <-c.Errors:
+				if sse.Verbose > 0 {
+					fmt.Fprintf(os.Stderr, "%s\n", errmsg)
+				}
+				continue
+			}
+
 			ok, err := p.Send([]byte(event.Data()))
 
 			if !ok && sse.Verbose > 0 {
