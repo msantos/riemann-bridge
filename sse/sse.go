@@ -50,15 +50,15 @@ func (sse *IO) In(p *pipe.Pipe) *pipe.Pipe {
 
 		var event eventsource.Event
 
-		for {
-			select {
-			case event = <-c.Events:
-			case errmsg := <-c.Errors:
-				if sse.Verbose > 0 {
-					fmt.Fprintf(os.Stderr, "%s\n", errmsg)
-				}
-				continue
+		go func() {
+			errmsg := <-c.Errors
+			if sse.Verbose > 0 {
+				fmt.Fprintf(os.Stderr, "%s\n", errmsg)
 			}
+		}()
+
+		for {
+			event = <-c.Events
 
 			ok, err := p.Send([]byte(event.Data()))
 
