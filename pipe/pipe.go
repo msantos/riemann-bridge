@@ -79,10 +79,7 @@ func (p *Pipe) exceeded() bool {
 		return false
 	}
 	p.n--
-	if p.n == 0 {
-		return true
-	}
-	return false
+	return p.n == 0
 }
 
 func (p *Pipe) Recv() bool {
