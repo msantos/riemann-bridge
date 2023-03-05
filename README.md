@@ -61,36 +61,31 @@ If the riemann service is proxied by path, adjust the URL:
 
 ~~~
 echo '{"service": "foo", "metric": 2}' | \
- riemann-bridge --src=- --dst=ws://127.0.0.1:5556/events
+ riemann-bridge - ws://127.0.0.1:5556/events
 ~~~
 
 ## Querying Events
 
 ~~~
 # websocket
-riemann-bridge --src=ws://127.0.0.1:5556/index 'service = "foo"'
+riemann-bridge --query='service = "foo"' ws://127.0.0.1:5556/index
 
 # SSE
-riemann-bridge --src=http://127.0.0.1:8080/index 'service = "foo"'
+riemann-bridge --query='service = "foo"' http://127.0.0.1:8080/index
 ~~~
 
 ## Forwarding Events Between Riemann Instances
 
 ~~~
 riemann-bridge \
- --src=ws://127.0.0.1:5556/index \
- --dst=ws://127.0.0.1:6556/events \
- 'service = "test" and not state = "expired"'
+ --query='service = "test" and not state = "expired"' \
+ ws://127.0.0.1:5556/index \
+ ws://127.0.0.1:6556/events
 ~~~
 
 # ARGS
 
-query *string*
-: Riemann query (default: not (service ~= "^riemann" or state = "expired"))
-
-# OPTIONS
-
---src *string*
+src *string*
 : Source riemann server (default: -)
 
   Examples:
@@ -105,13 +100,18 @@ destination
 
       ws://127.0.0.1:5556/events
 
---number *int*
+# OPTIONS
+
+query *string*
+: Riemann query (default: not (service ~= "^riemann" or state = "expired"))
+
+number *int*
 : Send *number* events and exit
 
---buffer-size *uint*
+buffer-size *uint*
 : Drop any events exceeding the buffer size (defaut: 0 (unbuffered))
 
---verbose *int*
+verbose *int*
 : Debug messages
 
 # ENVIRONMENT VARIABLES
@@ -127,5 +127,8 @@ RIEMANN_BRIDGE_QUERY
 
 # BUILD
 
+    go install github.com/msantos/riemann-bridge@latest
+
+    # or
     cd cmd/riemann-bridge
     CGO_ENABLED=0 go build -trimpath -ldflags "-s -w"

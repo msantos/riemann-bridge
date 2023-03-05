@@ -1,6 +1,6 @@
 // MIT License
 //
-// Copyright (c) 2020-2022 Michael Santos
+// # Copyright (c) 2020-2023 Michael Santos
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -46,7 +46,7 @@ type stateT struct {
 }
 
 const (
-	version = "1.0.4"
+	version = "2.0.0"
 )
 
 var errUnsupportedProtocol = errors.New("unsupported protocol")
@@ -68,26 +68,21 @@ func queryURL(arg, query string) (string, error) {
 }
 
 func args() *stateT {
-	query := getenv("RIEMANN_BRIDGE_QUERY",
-		`not (service ~= "^riemann" or state = "expired")`)
+	src := getenv("RIEMANN_BRIDGE_SRC", "-")
+	dst := getenv("RIEMANN_BRIDGE_DST", "-")
 
 	flag.Usage = func() {
 		_, _ = fmt.Fprintf(os.Stderr, `%s v%s
-Usage: %s [<option>] <query (default '%s')>
+Usage: %s [<option>] <source (default '%s')> <destination (default '%s')
 
-`, path.Base(os.Args[0]), version, os.Args[0], query)
+`, path.Base(os.Args[0]), version, os.Args[0], src, dst)
 		flag.PrintDefaults()
 	}
 
-	src := flag.String(
-		"src",
-		getenv("RIEMANN_BRIDGE_SRC", "-"),
-		"Source Riemann server ((ws|http)[s]://<ipaddr>:<port>/index)",
-	)
-	dst := flag.String(
-		"dst",
-		getenv("RIEMANN_BRIDGE_DST", "-"),
-		"Destination Riemann server (ws[s]://<ipaddr>:<port>/events)",
+	query := flag.String(
+		"query",
+		getenv("RIEMANN_BRIDGE_QUERY", `not (service ~= "^riemann" or state = "expired")`),
+		"Riemann query",
 	)
 
 	bufferSize := flag.Uint("buffer-size", 0,
@@ -100,14 +95,19 @@ Usage: %s [<option>] <query (default '%s')>
 
 	flag.Parse()
 
-	if flag.NArg() > 0 {
-		query = flag.Arg(0)
+	switch flag.NArg() {
+	case 2:
+		dst = flag.Arg(1)
+		fallthrough
+	case 1:
+		src = flag.Arg(0)
+	default:
 	}
 
 	return &stateT{
-		query:      query,
-		src:        *src,
-		dst:        *dst,
+		query:      *query,
+		src:        src,
+		dst:        dst,
 		bufferSize: int(*bufferSize),
 		number:     uint64(*number),
 		verbose:    *verbose,
