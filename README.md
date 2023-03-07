@@ -33,25 +33,33 @@ field is added with the value set to the current time.
 Use `/index`. For example, if the riemann server is running on port 5556
 on localhost:
 
-    ws://127.0.0.1:5556/index
+```
+ws://127.0.0.1:5556/index
+```
 
 ### Writing Events
 
 Use `/events`. For example, if the riemann server is running on port 5556
 on localhost:
 
-    ws://127.0.0.1:5556/events
+```
+ws://127.0.0.1:5556/events
+```
 
 ## SSE
 
 Use `/index`. For example, if the riemann server is running on port 5558
 on localhost:
 
-    http://127.0.0.1:5558/index
+```
+http://127.0.0.1:5558/index
+```
 
 If the riemann service is proxied by path, adjust the URL:
 
-    https://example.com/event/index
+```
+https://example.com/event/index
+```
 
 ### Reading Events
 
@@ -59,57 +67,61 @@ If the riemann service is proxied by path, adjust the URL:
 
 ## Sending Events
 
-~~~
+```
 echo '{"service": "foo", "metric": 2}' | \
  riemann-bridge - ws://127.0.0.1:5556/events
-~~~
+```
 
 ## Querying Events
 
-~~~
+```
 # websocket
 riemann-bridge --query='service = "foo"' ws://127.0.0.1:5556/index
 
 # SSE
 riemann-bridge --query='service = "foo"' http://127.0.0.1:8080/index
-~~~
+```
 
 ## Forwarding Events Between Riemann Instances
 
-~~~
+```
 riemann-bridge \
  --query='service = "test" and not state = "expired"' \
  ws://127.0.0.1:5556/index \
  ws://127.0.0.1:6556/events
-~~~
+```
 
 # ARGS
 
 src *string*
 : Source riemann server (default: -)
 
-  Examples:
+Examples:
 
-      ws://127.0.0.1:5556/index
-      http://127.0.0.1:5558/index
+```
+  ws://127.0.0.1:5556/index
+  http://127.0.0.1:5558/index
+```
 
 destination
 : Destination riemann server (default: -)
 
-  Examples:
+Examples:
 
-      ws://127.0.0.1:5556/events
+```
+  ws://127.0.0.1:5556/events
+```
 
 # OPTIONS
 
 query *string*
-: Riemann query (default: not (service ~= "^riemann" or state = "expired"))
+: Riemann query (default: `not (service ~= "^riemann" or state = "expired")`)
 
 number *int*
 : Send *number* events and exit
 
 buffer-size *uint*
-: Drop any events exceeding the buffer size (defaut: 0 (unbuffered))
+: Drop any events exceeding the buffer size (defaut: `0` (unbuffered))
 
 verbose *int*
 : Debug messages
@@ -127,8 +139,10 @@ RIEMANN_BRIDGE_QUERY
 
 # BUILD
 
-    go install github.com/msantos/riemann-bridge@latest
+```
+go install github.com/msantos/riemann-bridge@latest
 
-    # or
-    cd cmd/riemann-bridge
-    CGO_ENABLED=0 go build -trimpath -ldflags "-s -w"
+# or
+cd cmd/riemann-bridge
+CGO_ENABLED=0 go build -trimpath -ldflags "-s -w"
+```
