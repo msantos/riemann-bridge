@@ -87,9 +87,5 @@ func (ws *IO) Out(p *pipe.Pipe) error {
 		}
 	}
 
-	if err := p.Err(); err != nil {
-		return err
-	}
-
-	return nil
+	return p.Err()
 }
