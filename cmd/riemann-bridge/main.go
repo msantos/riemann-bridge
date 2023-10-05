@@ -120,20 +120,20 @@ func main() {
 	stdin, err := state.In()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	stdout, err := state.Out()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(1)
+		os.Exit(2)
 	}
 
 	p := pipe.New(state.bufferSize, state.number)
 
 	if err := stdout.Out(stdin.In(p)); err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
-		os.Exit(111)
+		os.Exit(1)
 	}
 }
 
