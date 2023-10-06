@@ -148,27 +148,19 @@ func (state *stateT) In() (pipe.Piper, error) {
 			state.src,
 			"subscribe=true&query="+url.QueryEscape(state.query),
 		)
-		if err != nil {
-			return nil, err
-		}
-
 		return &websocket.IO{
 			URL:     query,
 			Verbose: state.verbose,
-		}, nil
+		}, err
 	case strings.HasPrefix(state.src, "http"):
 		query, err := queryURL(
 			state.src,
 			"query="+url.QueryEscape(state.query),
 		)
-		if err != nil {
-			return nil, err
-		}
-
 		return &sse.IO{
 			URL:     query,
 			Verbose: state.verbose,
-		}, nil
+		}, err
 	default:
 		return nil, fmt.Errorf("in: %s: %w", state.src, errUnsupportedProtocol)
 	}
@@ -183,14 +175,10 @@ func (state *stateT) Out() (pipe.Piper, error) {
 
 	case strings.HasPrefix(state.dst, "ws"):
 		query, err := queryURL(state.dst, "")
-		if err != nil {
-			return nil, err
-		}
-
 		return &websocket.IO{
 			URL:     query,
 			Verbose: state.verbose,
-		}, nil
+		}, err
 	default:
 		return nil, fmt.Errorf("%s: %w", state.dst, errUnsupportedProtocol)
 	}
