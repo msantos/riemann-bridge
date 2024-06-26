@@ -144,5 +144,5 @@ go install github.com/msantos/riemann-bridge@latest
 
 # or
 cd cmd/riemann-bridge
-CGO_ENABLED=0 go build -trimpath -ldflags "-s -w"
+CGO_ENABLED=0 go build -trimpath -ldflags "-w"
 ```
