@@ -141,8 +141,10 @@ RIEMANN_BRIDGE_QUERY
 
 ```
 go install github.com/msantos/riemann-bridge@latest
+```
 
-# or
-cd cmd/riemann-bridge
-CGO_ENABLED=0 go build -trimpath -ldflags "-w"
+To build a reproducible executable from the git repository:
+
+```
+CGO_ENABLED=0 go build -trimpath -ldflags "-w" ./cmd/riemann-bridge
 ```
