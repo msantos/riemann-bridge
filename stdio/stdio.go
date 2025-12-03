@@ -29,7 +29,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/msantos/riemann-bridge/pipe"
+	"go.iscode.ca/riemann-bridge/pipe"
 )
 
 type IO struct {

@@ -30,10 +30,10 @@ import (
 	"path"
 	"strings"
 
-	"github.com/msantos/riemann-bridge/pipe"
-	"github.com/msantos/riemann-bridge/sse"
-	"github.com/msantos/riemann-bridge/stdio"
-	"github.com/msantos/riemann-bridge/websocket"
+	"go.iscode.ca/riemann-bridge/pipe"
+	"go.iscode.ca/riemann-bridge/sse"
+	"go.iscode.ca/riemann-bridge/stdio"
+	"go.iscode.ca/riemann-bridge/websocket"
 )
 
 type stateT struct {

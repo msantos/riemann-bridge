@@ -140,7 +140,7 @@ RIEMANN_BRIDGE_QUERY
 # BUILD
 
 ```
-go install github.com/msantos/riemann-bridge@latest
+go install go.iscode.ca/riemann-bridge@latest
 ```
 
 To build a reproducible executable from the git repository:
