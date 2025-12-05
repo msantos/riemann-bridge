@@ -1,3 +1,5 @@
+[![Go Reference](https://pkg.go.dev/badge/go.iscode.ca/riemann-bridge.svg)](https://pkg.go.dev/go.iscode.ca/riemann-bridge)
+
 # SYNOPSIS
 
 riemann-bridge [*options*] *url*
