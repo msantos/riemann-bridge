@@ -21,9 +21,7 @@
 // SOFTWARE.
 package pipe
 
-import (
-	"errors"
-)
+import "io"
 
 type Pipe struct {
 	ch      chan []byte
@@ -37,8 +35,6 @@ type Piper interface {
 	In(*Pipe) *Pipe
 	Out(*Pipe) error
 }
-
-var EOF = errors.New("EOF")
 
 func New(bufsize int, n uint64) *Pipe {
 	ch := make(chan []byte, bufsize)
@@ -57,7 +53,7 @@ func (p *Pipe) SetErr(err error) *Pipe {
 func (p *Pipe) Send(b []byte) (ok bool, err error) {
 	defer func() {
 		if p.exceeded() {
-			err = EOF
+			err = io.EOF
 		}
 	}()
 

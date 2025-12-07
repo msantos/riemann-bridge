@@ -45,8 +45,10 @@ func (ws *IO) In(p *pipe.Pipe) *pipe.Pipe {
 	}
 
 	go func() {
-		defer c.Close()
-		defer p.Close()
+		defer func() {
+			_ = c.Close()
+			p.Close()
+		}()
 
 		for {
 			_, event, err := c.ReadMessage()
@@ -79,7 +81,9 @@ func (ws *IO) Out(p *pipe.Pipe) error {
 		return err
 	}
 
-	defer c.Close()
+	defer func() {
+		_ = c.Close()
+	}()
 
 	for p.Recv() {
 		if err := c.WriteMessage(websocket.TextMessage, p.Bytes()); err != nil {
