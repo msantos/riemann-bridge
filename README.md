@@ -16,11 +16,8 @@ Pipeline for [riemann](https://riemann.io/) events:
 Possible uses are:
 
 * publishing or querying riemann events
-
 * replicate events to a test server
-
 * partition events to another riemann server for a restricted view
-
 * failover or load balancing riemann instances
 
 ## Stdin
@@ -69,14 +66,14 @@ https://example.com/event/index
 
 ## Sending Events
 
-```
+```bash
 echo '{"service": "foo", "metric": 2}' | \
  riemann-bridge - ws://127.0.0.1:5556/events
 ```
 
 ## Querying Events
 
-```
+```bash
 # websocket
 riemann-bridge --query='service = "foo"' ws://127.0.0.1:5556/index
 
@@ -86,7 +83,7 @@ riemann-bridge --query='service = "foo"' http://127.0.0.1:8080/index
 
 ## Forwarding Events Between Riemann Instances
 
-```
+```bash
 riemann-bridge \
  --query='service = "test" and not state = "expired"' \
  ws://127.0.0.1:5556/index \
@@ -141,12 +138,12 @@ RIEMANN_BRIDGE_QUERY
 
 # BUILD
 
-```
+```bash
 go install go.iscode.ca/riemann-bridge/cmd/riemann-bridge@latest
 ```
 
 To build a reproducible executable from the git repository:
 
-```
+```bash
 CGO_ENABLED=0 go build -trimpath -ldflags "-w" ./cmd/riemann-bridge
 ```
